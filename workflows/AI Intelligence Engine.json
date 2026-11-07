@@ -1,0 +1,582 @@
+{
+  "name": "AI Intelligence Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are an expert AI Business Intelligence Analyst.\n\nAnalyse the following actual customer feedback.\n\nCustomer Name: {{$json[\"Customer Name\"]}}\nCustomer Email: {{$json[\"Customer Email\"]}}\nProduct: {{$json[\"Product\"]}}\nFeedback: {{$json[\"Feedback Message\"]}}\nPreferred Language: {{$json[\"Preferred Language\"]}}\n\nAnalyse the customer's real feedback.\n\nReturn:\n1. sentiment\n2. intent\n3. urgency\n4. risk_score (0 to 100)\n5. issue_category\n6. lost_sale_opportunity\n7. recommended_action\n8. ai_response\n9. reason\n\nDo not return Insufficient evidence if actual feedback is provided.\nDo not invent customer information.\nReturn only structured JSON.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        160,
+        -16
+      ],
+      "id": "a45cc208-622e-4286-83e0-9ee8aa3a1a90",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        192
+      ],
+      "id": "c38a2e11-a23b-4f58-85af-8c811b91c576",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jwIl7zr912H5Ym1j",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "\n{\n  \"sentiment\": \"Negative\",\n  \"intent\": \"Complaint\",\n  \"urgency\": \"High\",\n  \"risk_score\": 85,\n  \"issue_category\": \"Delivery Delay\",\n  \"lost_sale_opportunity\": \"Medium\",\n  \"recommended_action\": \"Contact customer immediately and verify delivery status\",\n  \"ai_response\": \"We apologize for the delay. Our team will investigate and update you.\",\n  \"reason\": \"Customer reports delayed delivery and lack of communication.\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        208
+      ],
+      "id": "ae904d65-14f4-4276-98db-8d1fa2df495b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "22c9f21b-5b76-4bb5-82ec-475f93cc0d73",
+              "leftValue": "={{ $json.Risk_Score }}",
+              "rightValue": 75,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        592,
+        0
+      ],
+      "id": "f972bad5-ba9b-4a1f-9103-bbedd0984ebe",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "72369075-ccba-43f0-96b9-af45b5f55ff0",
+              "leftValue": "={{$json.risk_score}}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        816,
+        96
+      ],
+      "id": "558d44dd-8a50-4bd0-9228-cfc1cbaa2721",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "7687208205",
+        "message": "=🚨 AI BUSINESS GUARDIAN – HIGH RISK ALERT\n\n⚠️ A customer issue requires immediate attention.\n\n📊 AI ANALYSIS\n• Sentiment: {{$json.output.sentiment}}\n• Intent: {{$json.output.intent}}\n• Urgency: {{$json.output.urgency}}\n• Risk Score: {{$json.output.risk_score}} / 100\n\n🔍 ISSUE DETAILS\n• Category: {{$json.output.issue_category}}\n• Lost Sales Opportunity: {{$json.output.lost_sale_opportunity}}\n\n💡 RECOMMENDED ACTION\n{{$json.output.recommended_action}}\n\n🤖 AI-GENERATED CUSTOMER RESPONSE\n{{$json.output.ai_response}}\n\n⚡ Action Required: Please review this alert and decide whether to approve the recommended action.\n\n— AI Business Guardian",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        -96
+      ],
+      "id": "fbce38af-3356-45aa-9d58-8d66d87a5688",
+      "name": "Send message and wait for response",
+      "webhookId": "f4d200b8-90e9-4ec7-bd7a-ba0a34e0f42e",
+      "credentials": {
+        "telegramApi": {
+          "id": "PGSXfdPFuYAcgKpU",
+          "name": "Telegram account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d06f495d-496b-47af-9ba6-afc7a7dbca71",
+              "leftValue": "={{$json.data.approved}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        -96
+      ],
+      "id": "357b9dac-23ee-4e71-8a1a-e87f7b38ac54",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Append row in sheet').item.json.Product }}",
+        "message": "={{ $('Basic LLM Chain').item.json.output.ai_response }}",
+        "options": {
+          "sendTo": "={{ $('Append row in sheet').item.json.Customer_Email }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        -112
+      ],
+      "id": "c46414f0-df1c-47b7-98f7-2e619297e2dc",
+      "name": "Create a draft",
+      "webhookId": "523a4fac-4974-4273-a9d9-0c9ba6ed78a7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "SeYk0QqPIaOeKogR",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU",
+          "mode": "list",
+          "cachedResultName": "AI_Business_Guardian_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Customer_Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer_Id": "={{ 'CUST-' + $now.toMillis() }}",
+            "Submitted_At": "={{ $now.setZone('Asia/Colombo').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "Sentiment": "={{ $json.output.sentiment }}",
+            "Intent": "={{ $json.output.intent }}",
+            "Urgency": "={{ $json.output.urgency }}",
+            "Risk_Score": "={{ $json.output.risk_score }}",
+            "Issue_Category": "={{ $json.output.issue_category }}",
+            "Recommended_Action": "={{ $json.output.recommended_action }}",
+            "AI_Response": "={{ $json.output.ai_response }}",
+            "Status": "Analyzed",
+            "Customer_Name": "={{ $('Google Sheets Trigger').item.json['Customer Name'] }}",
+            "Customer_Email": "={{ $('Google Sheets Trigger').item.json['Customer Email'] }}",
+            "Product": "={{ $('Google Sheets Trigger').item.json['Product'] }}",
+            "Message": "={{ $('Google Sheets Trigger').item.json['Feedback Message'] }}",
+            "Language": "={{ $('Google Sheets Trigger').item.json['Preferred Language'] }}",
+            "Reason": "={{ $json.output.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer_Id",
+              "displayName": "Customer_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Name",
+              "displayName": "Customer_Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer_Email",
+              "displayName": "Customer_Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Language",
+              "displayName": "Language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Submitted_At",
+              "displayName": "Submitted_At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk_Score",
+              "displayName": "Risk_Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Issue_Category",
+              "displayName": "Issue_Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended_Action",
+              "displayName": "Recommended_Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI_Response",
+              "displayName": "AI_Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        -160
+      ],
+      "id": "6cc99230-8051-46e3-b54d-229b5af49406",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qNmvTtevBnqdbyJD",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU",
+          "mode": "list",
+          "cachedResultName": "AI_Business_Guardian_DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Customer_Feedback",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LKhrReLh9F-zNIpUcG0YCbP8AdvDOohaT-86wPUiggU/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "c5cc915e-fa83-46da-9ebc-f64a7f110959",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleApi": {
+          "id": "OeDk6MfVtOYSbMiy",
+          "name": "Google Service Account account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send message and wait for response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message and wait for response": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "46957bbf-6c32-4b85-8e2e-5665d12ef564",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d25cb23fcb8b76ee6aab7a38256df64376c2bc6a7a7f869c0b5ebb5b18ec6c21"
+  },
+  "nodeGroups": [],
+  "id": "rBSa2lyOxYXT3nqF",
+  "tags": []
+}
